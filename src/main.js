@@ -2,6 +2,7 @@ import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 import iziToast from 'izitoast';
 import 'izitoast/dist/css/iziToast.min.css';
+import axios from 'axios';
 
 const refs = {
   form: document.querySelector('.form'),
@@ -44,13 +45,12 @@ function onSearch(e) {
   });
 
   //fetch photos
-  fetchPhotos(searchParams)
-    .then(data => {
-      createGallery(data);
+  axios
+    .get(`https://pixabay.com/api/?${searchParams}`)
+    .then(response => {
+      createGallery(response.data);
     })
-    .catch(error => {
-      console.log(error);
-    })
+    .catch(error => console.log(error))
     .finally(() => {
       refs.form.reset();
     });
@@ -109,14 +109,4 @@ function createGallery(data) {
   //initializing simplelightbox
   const gallery = new SimpleLightbox('.gallery-list a', simplelightboxOptions);
   gallery.refresh();
-}
-
-//fetching search qquery
-function fetchPhotos(searchParams) {
-  return fetch(`https://pixabay.com/api/?${searchParams}`).then(response => {
-    if (!response.ok) {
-      throw new Error(response.status);
-    }
-    return response.json();
-  });
 }
