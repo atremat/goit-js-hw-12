@@ -162,8 +162,22 @@ async function onMoreClick(e) {
     const markup = renderGalleryMarkup(data.hits);
     loaderHide(refs.moreLoader);
     refs.galleryList.insertAdjacentHTML('beforeend', markup);
+    smoothScroll();
   } catch (err) {
     loaderHide(refs.moreLoader);
     console.log(err);
   }
+}
+
+function smoothScroll() {
+  const galleryItem = document.querySelector('.gallery-item');
+
+  // gettinf height of item
+  const galleryItemHeight = galleryItem.getBoundingClientRect().height;
+
+  // scroll fun
+  window.scrollBy({
+    top: galleryItemHeight * 2, // scroll with 2 heights of item
+    behavior: 'smooth', // make scroll smooth
+  });
 }
