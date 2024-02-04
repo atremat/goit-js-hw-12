@@ -6,6 +6,7 @@ import axios from 'axios';
 
 let page;
 let searchText = '';
+let totalPages;
 
 const refs = {
   form: document.querySelector('.form'),
@@ -15,6 +16,7 @@ const refs = {
   searchLoader: document.querySelector('.search-loader'),
   moreLoader: document.querySelector('.more-loader'),
   moreBtn: document.querySelector('.more-button'),
+  moreWrapper: document.querySelector('.more-wrapper'),
 };
 
 //options for simplelightbox
@@ -36,6 +38,10 @@ async function onSearch(e) {
 
   //page = 1 by default
   page = 1;
+
+  //total by default
+  totalPages = null;
+
   //show css-loader
   loaderShow(refs.searchLoader);
 
@@ -48,17 +54,7 @@ async function onSearch(e) {
   } catch (err) {
     console.log(err);
   }
-
-  //fetch photos
-  // axios
-  //   .get(`https://pixabay.com/api/?${searchParams}`)
-  //   .then(response => {
-  //     createGallery(response.data);
-  //   })
-  //   .catch(error => console.log(error))
-  //   .finally(() => {
-  //     refs.form.reset();
-  //   });
+  refs.form.reset();
 }
 async function fetchPhotos(searchText) {
   //parameters of searching query
@@ -73,6 +69,13 @@ async function fetchPhotos(searchText) {
   });
   const response = await axios.get(`https://pixabay.com/api/?${searchParams}`);
   const data = response.data;
+  totalPages = Math.ceil(data.total / 15);
+  console.log(data.total);
+  console.log('total pages: ', totalPages);
+  console.log('current page', page);
+  if (page != totalPages) {
+    moreBtnShow();
+  }
   return data;
 }
 
@@ -102,6 +105,14 @@ function loaderHide(loader) {
 
 function loaderShow(loader) {
   loader.classList.remove('hidden');
+}
+
+function moreBtnHide() {
+  refs.moreWrapper.classList.add('hidden');
+}
+
+function moreBtnShow() {
+  refs.moreWrapper.classList.remove('hidden');
 }
 
 function createGallery(data) {
@@ -134,7 +145,16 @@ function createGallery(data) {
 refs.moreBtn.addEventListener('click', onMoreClick);
 
 async function onMoreClick(e) {
-  //!loader show bottom
+  //check if the last page is downloaded, then disable more button and message show
+  if (page + 1 === totalPages) {
+    moreBtnHide();
+    iziToast.info({
+      message: "We're sorry, but you've reached the end of search results.",
+      position: 'topRight',
+    });
+  }
+
+  //loader show bottom
   loaderShow(refs.moreLoader);
   try {
     page += 1;
