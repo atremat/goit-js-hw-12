@@ -26,7 +26,7 @@ const simplelightboxOptions = {
 
 refs.form.addEventListener('submit', onSearch);
 
-function onSearch(e) {
+async function onSearch(e) {
   e.preventDefault();
 
   //show css-loader
@@ -42,18 +42,31 @@ function onSearch(e) {
     image_type: 'photo',
     orientation: 'horizontal',
     safesearch: true,
+    per_page: 15,
   });
 
+  try {
+    const data = await fetchPhotos(searchParams);
+    createGallery(data);
+  } catch (err) {
+    console.log(err);
+  }
+
   //fetch photos
-  axios
-    .get(`https://pixabay.com/api/?${searchParams}`)
-    .then(response => {
-      createGallery(response.data);
-    })
-    .catch(error => console.log(error))
-    .finally(() => {
-      refs.form.reset();
-    });
+  // axios
+  //   .get(`https://pixabay.com/api/?${searchParams}`)
+  //   .then(response => {
+  //     createGallery(response.data);
+  //   })
+  //   .catch(error => console.log(error))
+  //   .finally(() => {
+  //     refs.form.reset();
+  //   });
+}
+async function fetchPhotos(searchParams) {
+  const response = await axios.get(`https://pixabay.com/api/?${searchParams}`);
+  const data = response.data;
+  return data;
 }
 
 function renderGalleryMarkup(photoList) {
