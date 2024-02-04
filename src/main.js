@@ -4,12 +4,17 @@ import iziToast from 'izitoast';
 import 'izitoast/dist/css/iziToast.min.css';
 import axios from 'axios';
 
+let page;
+let searchText = '';
+
 const refs = {
   form: document.querySelector('.form'),
   textInput: document.querySelector('#query'),
   searchBtn: document.querySelector('.search-button'),
   galleryList: document.querySelector('.gallery-list'),
-  loader: document.querySelector('.loader'),
+  searchLoader: document.querySelector('.search-loader'),
+  moreLoader: document.querySelector('.more-loader'),
+  moreBtn: document.querySelector('.more-button'),
 };
 
 //options for simplelightbox
@@ -29,24 +34,16 @@ refs.form.addEventListener('submit', onSearch);
 async function onSearch(e) {
   e.preventDefault();
 
+  //page = 1 by default
+  page = 1;
   //show css-loader
-  loaderShow();
+  loaderShow(refs.searchLoader);
 
   //value of input
-  const searchText = e.currentTarget.elements.query.value;
-
-  //parameters of searching query
-  const searchParams = new URLSearchParams({
-    key: '42031589-0742425241f8784341d5a922f',
-    q: searchText,
-    image_type: 'photo',
-    orientation: 'horizontal',
-    safesearch: true,
-    per_page: 15,
-  });
+  searchText = e.currentTarget.elements.query.value;
 
   try {
-    const data = await fetchPhotos(searchParams);
+    const data = await fetchPhotos(searchText);
     createGallery(data);
   } catch (err) {
     console.log(err);
@@ -63,7 +60,17 @@ async function onSearch(e) {
   //     refs.form.reset();
   //   });
 }
-async function fetchPhotos(searchParams) {
+async function fetchPhotos(searchText) {
+  //parameters of searching query
+  const searchParams = new URLSearchParams({
+    key: '42031589-0742425241f8784341d5a922f',
+    q: searchText,
+    image_type: 'photo',
+    orientation: 'horizontal',
+    safesearch: true,
+    per_page: 15,
+    page,
+  });
   const response = await axios.get(`https://pixabay.com/api/?${searchParams}`);
   const data = response.data;
   return data;
@@ -89,12 +96,12 @@ function renderGalleryMarkup(photoList) {
     .join('\n');
 }
 
-function loaderHide() {
-  refs.loader.classList.add('is-hidden');
+function loaderHide(loader) {
+  loader.classList.add('hidden');
 }
 
-function loaderShow() {
-  refs.loader.classList.remove('is-hidden');
+function loaderShow(loader) {
+  loader.classList.remove('hidden');
 }
 
 function createGallery(data) {
@@ -109,7 +116,7 @@ function createGallery(data) {
     refs.galleryList.innerHTML = '';
 
     //hiding css-load
-    loaderHide();
+    loaderHide(refs.searchLoader);
     return;
   }
 
@@ -117,9 +124,26 @@ function createGallery(data) {
   refs.galleryList.innerHTML = renderGalleryMarkup(data.hits);
 
   //hiding css-load
-  loaderHide();
+  loaderHide(refs.searchLoader);
 
   //initializing simplelightbox
   const gallery = new SimpleLightbox('.gallery-list a', simplelightboxOptions);
   gallery.refresh();
+}
+
+refs.moreBtn.addEventListener('click', onMoreClick);
+
+async function onMoreClick(e) {
+  //!loader show bottom
+  loaderShow(refs.moreLoader);
+  try {
+    page += 1;
+    const data = await fetchPhotos(searchText);
+    const markup = renderGalleryMarkup(data.hits);
+    loaderHide(refs.moreLoader);
+    refs.galleryList.insertAdjacentHTML('beforeend', markup);
+  } catch (err) {
+    loaderHide(refs.moreLoader);
+    console.log(err);
+  }
 }
