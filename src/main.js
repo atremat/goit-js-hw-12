@@ -42,7 +42,7 @@ async function onSearch(e) {
   page = 1;
 
   //total by default
-  totalPages = null;
+  totalPages = 0;
 
   //show css-loader
   loaderShow(refs.searchLoader);
@@ -75,7 +75,7 @@ async function fetchPhotos(searchText) {
   console.log(data.total);
   console.log('total pages: ', totalPages);
   console.log('current page', page);
-  if (page != totalPages) {
+  if (page < totalPages) {
     moreBtnShow();
   }
   return data;
@@ -130,6 +130,8 @@ function createGallery(data) {
 
     //hiding css-load
     loaderHide(refs.searchLoader);
+
+    //hiding load more button
     return;
   }
 
