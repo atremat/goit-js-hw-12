@@ -7,6 +7,7 @@ import axios from 'axios';
 let page;
 let searchText = '';
 let totalPages;
+let gallery = null;
 
 const refs = {
   form: document.querySelector('.form'),
@@ -29,6 +30,7 @@ const simplelightboxOptions = {
   captionPosition: 'bottom',
   captionClass: '',
   captionHTML: true,
+  spinner: true,
 };
 
 refs.form.addEventListener('submit', onSearch);
@@ -136,10 +138,23 @@ function createGallery(data) {
 
   //hiding css-load
   loaderHide(refs.searchLoader);
+  // if (gallery) {
+  //   console.log('refreshing gallery');
+  //   gallery.refresh();
+  // }
+  initSimpleLightBox();
+}
 
+function initSimpleLightBox() {
   //initializing simplelightbox
-  const gallery = new SimpleLightbox('.gallery-list a', simplelightboxOptions);
+  // gallery = null;
+  // if (gallery) {
+  //   gallery.refresh();
+  // gallery = null;
+  // }
+  gallery = new SimpleLightbox('.gallery-list a', simplelightboxOptions);
   gallery.refresh();
+  // return gallery;
 }
 
 refs.moreBtn.addEventListener('click', onMoreClick);
@@ -158,11 +173,13 @@ async function onMoreClick(e) {
   loaderShow(refs.moreLoader);
   try {
     page += 1;
+    gallery.destroy();
     const data = await fetchPhotos(searchText);
     const markup = renderGalleryMarkup(data.hits);
     loaderHide(refs.moreLoader);
     refs.galleryList.insertAdjacentHTML('beforeend', markup);
     smoothScroll();
+    initSimpleLightBox();
   } catch (err) {
     loaderHide(refs.moreLoader);
     console.log(err);
