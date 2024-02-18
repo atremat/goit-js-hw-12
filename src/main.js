@@ -3,11 +3,14 @@ import 'izitoast/dist/css/iziToast.min.css';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 
-import { fetchImages } from './js/pixabay-api.js';
+import { PixabayAPI } from './js/pixabay-api.js';
 import { imagesTemplate } from './js/render-functions.js';
 
 //creating instance of SimpleLightbox
 let simplelightboxInstance = null;
+
+//creating instance of PixabayAPI
+const pixabayApi = new PixabayAPI();
 
 const refs = {
   form: document.querySelector('.form'),
@@ -32,51 +35,62 @@ const simplelightboxOptions = {
   captionHTML: true,
 };
 
-// ======================================
-let query;
-let page;
-let maxPage;
+let query; //contains value of input
+let page; //contains value of current page
+let maxPage; //contains value of last page
 
 refs.form.addEventListener('submit', onFormSubmit);
 refs.moreBtn.addEventListener('click', onLoadMoreClick);
 
-// ======================================
-
 async function onFormSubmit(e) {
   e.preventDefault();
+  //getting value of input
   query = e.target.elements.query.value.trim();
+  //by default current page equals 1
   page = 1;
 
+  //checking if input is empty
   if (!query) {
     showError('Empty field');
     return;
   }
 
+  //shows loader
   showLoader();
 
   try {
-    const data = await fetchImages(query, page);
+    //fetching images
+    const data = await pixabayApi.getImages(query, page);
+    //checking if images are not found
     if (data.total === 0) {
       showError(
         `Sorry, there are no images matching your search query. Please try again!`
       );
     }
-    maxPage = Math.ceil(data.total / 15);
+    //calculating last page
+    maxPage = Math.ceil(data.total / pixabayApi.PER_PAGE);
+    //after submit we have to delete last contents
     refs.galleryList.innerHTML = '';
+    //rendering gallery
     renderGallery(data.hits);
 
+    //creating instance of SimpleLightbox
     simplelightboxInstance = new SimpleLightbox(
       '.gallery-list a',
       simplelightboxOptions
     );
+    //refreshing SimpleLightbox
     simplelightboxInstance.refresh();
   } catch (err) {
     console.error(err);
     showError(err);
   }
 
+  //hiding loader
   hideLoader();
+  //check if we have to show More button
   checkBtnVisibleStatus();
+  //clear input
   e.target.reset();
 }
 
@@ -84,17 +98,17 @@ async function onFormSubmit(e) {
 async function onLoadMoreClick() {
   //page increased after clicked
   page += 1;
-  //show loading status
+  //show loader
   showLoader();
   //check if it is the last page and show info
   if (page === maxPage) {
     showInfo("We're sorry, but you've reached the end of search results.");
   }
   //getting images
-  const data = await fetchImages(query, page);
+  const data = await pixabayApi.getImages(query, page);
   //rendering html
   renderGallery(data.hits);
-  //hide loading status
+  //hide loader
   hideLoader();
   //check if it is the last page
   checkBtnVisibleStatus();
@@ -119,18 +133,22 @@ function renderGallery(images) {
   refs.galleryList.insertAdjacentHTML('beforeend', markup);
 }
 
+//shows 'More button'
 function showLoadBtn() {
   refs.moreWrapper.classList.remove('hidden');
 }
 
+//hides 'More button'
 function hideLoadBtn() {
   refs.moreWrapper.classList.add('hidden');
 }
 
+//shows loader
 function showLoader() {
   refs.searchLoader.classList.remove('hidden');
 }
 
+//hides loader
 function hideLoader() {
   refs.searchLoader.classList.add('hidden');
 }
