@@ -6,7 +6,8 @@ import 'simplelightbox/dist/simple-lightbox.min.css';
 import { fetchImages } from './js/pixabay-api.js';
 import { imagesTemplate } from './js/render-functions.js';
 
-let gallery = null;
+//creating instance of SimpleLightbox
+let simplelightboxInstance = null;
 
 const refs = {
   form: document.querySelector('.form'),
@@ -29,7 +30,6 @@ const simplelightboxOptions = {
   captionPosition: 'bottom',
   captionClass: '',
   captionHTML: true,
-  spinner: true,
 };
 
 // ======================================
@@ -65,8 +65,11 @@ async function onFormSubmit(e) {
     refs.galleryList.innerHTML = '';
     renderGallery(data.hits);
 
-    gallery = new SimpleLightbox('.gallery-list a', simplelightboxOptions);
-    gallery.refresh();
+    simplelightboxInstance = new SimpleLightbox(
+      '.gallery-list a',
+      simplelightboxOptions
+    );
+    simplelightboxInstance.refresh();
   } catch (err) {
     console.error(err);
     showError(err);
@@ -77,28 +80,40 @@ async function onFormSubmit(e) {
   e.target.reset();
 }
 
+//more button clicked
 async function onLoadMoreClick() {
+  //page increased after clicked
   page += 1;
+  //show loading status
   showLoader();
+  //check if it is the last page and show info
+  if (page === maxPage) {
+    showInfo("We're sorry, but you've reached the end of search results.");
+  }
+  //getting images
   const data = await fetchImages(query, page);
+  //rendering html
   renderGallery(data.hits);
+  //hide loading status
   hideLoader();
+  //check if it is the last page
   checkBtnVisibleStatus();
 
-  gallery.destroy();
-  gallery = new SimpleLightbox('.gallery-list a', simplelightboxOptions);
-  gallery.refresh();
+  //refreshing instance of simplelightbox to update our gallery
+  simplelightboxInstance.refresh();
 
+  //getting height of <li> element for scrollBy
   const height =
     refs.galleryList.firstElementChild.getBoundingClientRect().height;
 
+  //using window method scrollBy to scroll after adding new images
   scrollBy({
     behavior: 'smooth',
     top: height * 2,
   });
 }
 
-// ======================================
+//rendering into html
 function renderGallery(images) {
   const markup = imagesTemplate(images);
   refs.galleryList.insertAdjacentHTML('beforeend', markup);
@@ -107,6 +122,7 @@ function renderGallery(images) {
 function showLoadBtn() {
   refs.moreWrapper.classList.remove('hidden');
 }
+
 function hideLoadBtn() {
   refs.moreWrapper.classList.add('hidden');
 }
@@ -114,10 +130,12 @@ function hideLoadBtn() {
 function showLoader() {
   refs.searchLoader.classList.remove('hidden');
 }
+
 function hideLoader() {
   refs.searchLoader.classList.add('hidden');
 }
 
+//show message error styling
 function showError(msg) {
   iziToast.error({
     message: msg,
@@ -125,6 +143,15 @@ function showError(msg) {
   });
 }
 
+//show message info styling
+function showInfo(msg) {
+  iziToast.info({
+    message: msg,
+    position: 'topRight',
+  });
+}
+
+//check if the page is last
 function checkBtnVisibleStatus() {
   if (page >= maxPage) {
     hideLoadBtn();
@@ -132,4 +159,3 @@ function checkBtnVisibleStatus() {
     showLoadBtn();
   }
 }
-// ========================================
